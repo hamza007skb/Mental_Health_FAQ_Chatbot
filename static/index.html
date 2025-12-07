@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chatbot UI</title>
+    <style>
+      /* Basic Reset */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: bisque;
+      }
+
+      .chat-container {
+        width: 400px;
+        max-width: 90%;
+        height: 600px;
+        background-color: #fff;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .chat-header {
+        padding: 15px;
+        background-color:chocolate;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+      }
+
+      .chat-messages {
+        flex: 1;
+        padding: 15px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .message {
+        max-width: 70%;
+        padding: 10px 15px;
+        border-radius: 20px;
+        word-wrap: break-word;
+      }
+
+      .message.user {
+        align-self: flex-end;
+        background-color: #dcf8c6;
+      }
+
+      .message.bot {
+        align-self: flex-start;
+        background-color: #eee;
+      }
+
+      .chat-input {
+        display: flex;
+        border-top: 1px solid #ddd;
+      }
+
+      .chat-input input {
+        flex: 1;
+        padding: 10px 15px;
+        border: none;
+        outline: none;
+        font-size: 16px;
+      }
+
+      .chat-input button {
+        padding: 10px 20px;
+        border: none;
+        background-color:darkolivegreen;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+
+      .chat-input button:hover {
+        background-color: #45a049;
+      }
+
+      /* Scrollbar */
+      .chat-messages::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .chat-messages::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-container">
+      <div class="chat-header">Mental Health FAQs</div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-input">
+        <input type="text" id="userInput" placeholder="Type your message..." />
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+
+    <script>
+      const chatMessages = document.getElementById("chatMessages");
+      const userInput = document.getElementById("userInput");
+
+      function sendMessage() {
+        const message = userInput.value.trim();
+        if (!message) return;
+
+        // Add user message
+        const userMsg = document.createElement("div");
+        userMsg.classList.add("message", "user");
+        userMsg.textContent = message;
+        chatMessages.appendChild(userMsg);
+
+        userInput.value = "";
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Call FastAPI /ask
+        fetch("/ask", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ question: message }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            const botMsg = document.createElement("div");
+            botMsg.classList.add("message", "bot");
+            botMsg.textContent = data.answer;
+            chatMessages.appendChild(botMsg);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+          })
+          .catch((err) => {
+            const botMsg = document.createElement("div");
+            botMsg.classList.add("message", "bot");
+            botMsg.textContent = "Error: Could not get response.";
+            chatMessages.appendChild(botMsg);
+          });
+      }
+
+      // Press Enter to send
+      userInput.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") sendMessage();
+      });
+    </script>
+  </body>
+</html>
